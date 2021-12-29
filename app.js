@@ -6,9 +6,12 @@ const ejsMate = require("ejs-mate");
 const Joi = require("joi");
 const session = require("express-session");
 const flash = require("connect-flash");
+const passport = require("passport");
+const localStrategy = require("passport-local");
 
 const Campground = require("./models/campground");
 const Review = require("./models/review");
+const User = require("./models/user");
 const catchAsync = require("./utils/catchAsync");
 const ExpressError = require("./utils/ExpressError");
 
@@ -33,6 +36,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
 
+// session
 const sessionConfig = {
   secret: "thisshouldbeabettersecret!",
   resave: false,
@@ -47,6 +51,13 @@ const sessionConfig = {
 
 app.use(session(sessionConfig));
 app.use(flash());
+
+// passport
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new localStrategy(User.authenticate()));
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
 
 // middleware for any message associated with flash key stored in res.locals.key word
 app.use((req, res, next) => {
