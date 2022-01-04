@@ -1,8 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
+const path = require("path/posix");
 const { storage } = require("../cloudinary");
 const upload = multer({ storage });
+const { cloudinary } = require("cloudinary");
 
 const Campground = require("../models/campground");
 const Review = require("../models/review");
@@ -91,17 +93,35 @@ router.put(
   "/:id",
   isLoggedIn,
   isAuthor,
+  upload.array("image"),
   validateCampground,
   catchAsync(async (req, res) => {
     const { id } = req.params;
     const campground = await Campground.findByIdAndUpdate(
       id,
-      req.body.campground
-      // {
-      //   ...req.body.campground,
-      // }
+      // req.body.campground
+      {
+        ...req.body.campground,
+      }
       // { new: true }
     );
+    const imgs = req.files.map((file) => ({
+      url: file.path,
+      filename: file.filename,
+    }));
+    campground.images.push(...imgs);
+    await campground.save();
+    if (req.body.deleteImages) {
+      // delete images from cloudinary
+      for (let filename of req.body.deleteImages) {
+        await cloudinary.uploader.delete(filename);
+      }
+
+      // update images(image checked for delete)
+      await campground.updateOne({
+        $pull: { images: { filename: { $in: req.body.deleteImages } } },
+      });
+    }
     req.flash("success", "Successfully updated campground!");
     res.redirect(`/campgrounds/${campground._id}`);
   })
