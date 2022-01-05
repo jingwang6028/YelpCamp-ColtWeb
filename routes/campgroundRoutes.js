@@ -5,6 +5,9 @@ const path = require("path/posix");
 const { storage } = require("../cloudinary");
 const upload = multer({ storage });
 const { cloudinary } = require("cloudinary");
+const mbxGeocoding = require("@mapbox/mapbox-sdk/services/geocoding");
+const mapBoxToken = process.env.MAPBOX_TOKEN;
+const geocoder = mbxGeocoding({ accessToken: mapBoxToken });
 
 const Campground = require("../models/campground");
 const Review = require("../models/review");
@@ -38,7 +41,16 @@ router.post(
   upload.array("image"),
   validateCampground,
   catchAsync(async (req, res) => {
+    // get longitude and latitude for location
+    const geoData = await geocoder
+      .forwardGeocode({
+        query: req.body.campground.location,
+        limit: 1,
+      })
+      .send();
+
     const campground = new Campground(req.body.campground);
+    campground.geometry = geoData.body.features[0].geometry;
     campground.images = req.files.map((file) => ({
       url: file.path,
       filename: file.filename,
