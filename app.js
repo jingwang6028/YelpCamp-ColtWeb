@@ -18,11 +18,13 @@ const Campground = require("./models/campground");
 const Review = require("./models/review");
 const User = require("./models/user");
 const catchAsync = require("./utils/catchAsync");
-const ExpressError = require("./utils/ExpressError");
+const ExpressError = require("./utils/ExpressError");  
+
+const PORT = process.env.PORT || 3000;
 
 const router = require("./routes");
 
-const dbUrl = "mongodb://localhost:27017/yelp-camp"
+const dbUrl = process.env.MONGODB_URI || "mongodb://localhost:27017/yelp-camp";
 // set up mongoose connection
 mongoose.connect(dbUrl);
 
@@ -42,10 +44,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
 
+const secret = process.env.SECRET || "thisshouldbeabettersecret!";
+
 // session store
 const store = new MongoStore({
   mongoUrl: dbUrl,
-  secret: "thisshouldbeabettersecret!",
+  secret,
   touchAfter: 24 * 60 * 60,
 });
 
@@ -57,7 +61,7 @@ store.on("error", function (err) {
 const sessionConfig = {
   store,
   name: "session",
-  secret: "thisshouldbeabettersecret!",
+  secret,
   resave: false,
   saveUninitialized: true,
   cookie: {
@@ -108,5 +112,5 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(3000, () => {
-  console.log("App is listening on port 3000...");
+  console.log(`App is listening on port ${PORT}...`);
 });
