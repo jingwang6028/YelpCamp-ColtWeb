@@ -111,6 +111,6 @@ app.use((err, req, res, next) => {
   res.status(statusCode).render("error", { err });
 });
 
-app.listen(3000, () => {
+app.listen(PORT, () => {
   console.log(`App is listening on port ${PORT}...`);
 });
